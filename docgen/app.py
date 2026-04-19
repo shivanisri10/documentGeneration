@@ -4,7 +4,8 @@ from schema import DOCUMENT_SCHEMAS
 from utils.latex_writer import render_latex
 
 TEMPLATE_MAP = {
-    "Onboarding_Letter": "templates/onboarding_template.tex"
+    "Onboarding_Letter": "templates/onboarding_template.tex",
+    "Acknowledgement_of_Debt": "templates/acknowledgement_of_debt_template.tex"
 }
 
 def validate_inputs(doc_type, user_inputs):
