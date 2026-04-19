@@ -10,6 +10,7 @@ ALLOWED_TYPES = (
     "MOU",
     "IP_Agreement",
     "Onboarding_Letter",
+    "Acknowledgement_of_Debt",
 )
 
 
