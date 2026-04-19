@@ -1,35 +1,42 @@
-DOCUMENT_SCHEMAS = {
-    "NDA": {
-        "required": ["Name", "Company", "Date", "Term", "Jurisdiction"],
-        "optional": ["Confidential_Info_Description", "Governing_Law"]
-    },
-    "Offer_Letter": {
-        "required": ["Name", "Company", "Position", "Start_Date", "Salary"],
-        "optional": ["Manager_Name", "Response_Date", "HR_Manager", "Benefits_Description"]
-    },
-    "Contract": {
-        "required": [
-            "Client_Name", "Company", "Contract_Creation_Date",
-            "Service_Description", "Payment_Amount", "Start_Date", "End_Date"
-        ],
-        "optional": ["Payment_Schedule", "Termination_Clause"]
-    },
-    "MOU": {
-        "required": ["PartyA_Name", "PartyB_Name", "Date", "Purpose", "Term", "Jurisdiction"],
-        "optional": ["Confidentiality", "Termination_Clause", "Governing_Law"]
-    },
-    "IP_Agreement": {
-        "required": ["Name", "Company", "Date", "Term", "Jurisdiction"],
-        "optional": ["IP_Description", "Governing_Law"]
-    },
-    "Onboarding_Letter": {
-        "required": [
-        "Employee_Name",
-        "Emp_ID",
-        "Role",
-        "Joining_Date",
-        "Document_Date"
-    ],
-    "optional": []
-}
-}
+from google import genai
+from config import GEMINI_API_KEY, MODEL_NAME
+from utils.retry import call_gemini_with_retry
+
+client = genai.Client(api_key=GEMINI_API_KEY)
+ALLOWED_TYPES = (
+    "NDA",
+    "Offer_Letter",
+    "Contract",
+    "MOU",
+    "IP_Agreement",
+    "Onboarding_Letter",
+    "Acknowledgement_of_Debt",
+)
+
+
+def _normalize_doc_type(raw_text):
+    candidate = (raw_text or "").strip()
+    if candidate in ALLOWED_TYPES:
+        return candidate
+
+    candidate_lower = candidate.lower()
+    for doc_type in ALLOWED_TYPES:
+        if doc_type.lower() in candidate_lower:
+            return doc_type
+
+    raise ValueError(f"Unsupported classification output: {candidate!r}")
+
+def classify_document(text):
+    prompt = f"""
+Classify this document into exactly one of:
+{", ".join(ALLOWED_TYPES)}.
+
+Do NOT return Other.
+Choose the closest match.
+Return only the label.
+
+Document:
+{text[:3000]}
+"""
+    response = call_gemini_with_retry(client, MODEL_NAME, prompt)
+    return _normalize_doc_type(response.text)
